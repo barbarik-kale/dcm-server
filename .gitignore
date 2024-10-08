@@ -22,3 +22,56 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.env/
+*.env
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Installed package directories
+*.egg
+*.eggs
+*.wheel
+
+# pyenv
+.python-version
+
+# Pipenv / Poetry
+Pipfile
+Pipfile.lock
+poetry.lock
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyright
+pyrightconfig.json
+
+# Logs
+*.log
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# macOS files
+.DS_Store
+
+# VSCode
+.vscode/
+db.sqlite3
