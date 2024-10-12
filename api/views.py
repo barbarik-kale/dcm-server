@@ -51,6 +51,7 @@ def user_login(request):
     except User.DoesNotExist:
         return utils.bad('invalid email or password')
 
+
 @api_view(['GET'])
 @authenticated()
 def user_list(request, **kwargs):
@@ -60,6 +61,7 @@ def user_list(request, **kwargs):
         for user in users
     ]
     return utils.ok(users_data)
+
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @authenticated()
