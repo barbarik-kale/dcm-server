@@ -4,9 +4,9 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from api import utils
 from api.decorators import authenticated
 from api.models import User, Drone
-from api.utils import get_jwt_token
 
 
 @api_view(['POST'])
@@ -18,36 +18,15 @@ def user_register(request):
     password = request.data.get('password')
 
     if not email or not password:
-        return Response(
-            data={
-                'message':'Please enter email and password'
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return utils.bad('please enter email and password')
 
     try:
         user = User(email=email, password=password)
         user.save()
-        return Response(
-            data={
-                'message':f'Email {email} registered!'
-            },
-            status=status.HTTP_200_OK
-        )
+        return utils.ok(user.to_dict())
     except IntegrityError:
-        return Response(
-            data={
-                'message': f'Email {email} is already registered!'
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception:
-        return Response(
-            data={
-                'message': f'Something went wrong'
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return utils.bad('email is already registered!')
+
 
 @api_view(['POST'])
 def user_login(request):
@@ -58,59 +37,29 @@ def user_login(request):
     password = request.data.get('password')
 
     if not email or not password:
-        return Response(
-            data={
-                'message': 'please provide email and password'
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return utils.bad('please provide email and password')
     try:
         user = User.objects.get(email=email)
         if user.password == password:
-            return Response(
-                data={
-                    'Authorization': get_jwt_token({'email': email})
-                },
-                status=status.HTTP_200_OK
+            return utils.ok(
+                {
+                    'Authorization': utils.get_jwt_token({'email': email})
+                }
             )
         else:
-            return Response(
-                data={
-                    'message': 'invalid email or password!'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return utils.bad('invalid email or password')
     except User.DoesNotExist:
-        return Response(
-            data={
-                'message': 'invalid email or password'
-            },
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    except Exception as e:
-        print(str(e))
-        return Response(
-            data={
-                'message': 'Something went wrong!'
-            },
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+        return utils.bad('invalid email or password')
 
 @api_view(['GET'])
 @authenticated()
 def user_list(request, **kwargs):
     users = User.objects.all()
     users_data = [
-        {
-            'id': user.id,
-            'email': user.email
-        }
+        user.to_dict()
         for user in users
     ]
-    return Response(
-        data=users_data,
-        status=status.HTTP_200_OK
-    )
+    return utils.ok(users_data)
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 @authenticated()
@@ -123,12 +72,7 @@ def drone_view(request, **kwargs):
             drone.to_dict()
             for drone in drones
         ]
-        return Response(
-            {
-                'data': drone_data
-            },
-            status=status.HTTP_200_OK
-        )
+        return utils.ok(drone_data)
 
     elif request.method == 'POST':
         name = request.data.get('name', 'raju')
@@ -136,12 +80,7 @@ def drone_view(request, **kwargs):
         flight_time_seconds = request.data.get('flight_time_seconds', None)
 
         if not flight_time_seconds:
-            return Response(
-                {
-                    'error': 'flight time is required'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return utils.bad('flight time is required!')
 
         drone = Drone(
             name=name,
@@ -150,34 +89,19 @@ def drone_view(request, **kwargs):
             user=user
         )
         drone.save()
-        return Response(
-            {
-                'data': drone.to_dict()
-            },
-            status=status.HTTP_200_OK
-        )
+        return utils.ok(drone.to_dict())
     elif request.method == 'PUT':
         drone_id = request.data.get('id')
         drone = Drone.objects.get(id=drone_id, user=user)
 
         if not drone:
-            return Response(
-                {
-                    'error': f'drone with id {drone_id} not found'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return utils.bad(f'drone with id {drone_id} not found')
         try:
             drone.name = request.data.get('name', drone.name)
             drone.avg_speed_ms = request.data.get('avg_speed_ms', drone.avg_speed_ms)
             drone.flight_time_seconds = request.data.get('flight_time_seconds', drone.flight_time_seconds)
             drone.save()
-            return Response(
-                {
-                    'data': drone.to_dict()
-                },
-                status=status.HTTP_200_OK
-            )
+            return utils.ok(drone.to_dict())
         except Exception:
             return Response(
                 {
@@ -188,25 +112,10 @@ def drone_view(request, **kwargs):
     elif request.method == 'DELETE':
         drone_id = request.data.get('id')
         if not drone_id:
-            return Response(
-                {
-                    'error': 'drone id is required'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return utils.bad('drone id is required')
         drone = Drone.objects.get(id=drone_id, user=user)
         if not drone:
-            return Response(
-                {
-                    'error': f'drone with id {drone_id} not found!'
-                },
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return utils.bad(f'drone with id {drone_id} not found!')
 
         drone.delete()
-        return Response(
-            {
-                'message': f'drone with id {drone_id} deleted!'
-            },
-            status=status.HTTP_200_OK
-        )
+        return utils.ok(message=f'drone with id {drone_id} deleted!')

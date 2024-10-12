@@ -2,6 +2,8 @@ from datetime import datetime, timezone, timedelta
 
 from jwt import JWT, jwk_from_dict
 from jwt.utils import get_int_from_datetime
+from rest_framework import status
+from rest_framework.response import Response
 
 JWT_SIGNING_KEY = jwk_from_dict(
     {
@@ -41,3 +43,35 @@ def decode_jwt_token(token):
         return claims
     except Exception:
         return None
+
+
+def bad(error):
+    """
+    Returns a Response object with error
+    To minimize the effort in views
+    """
+    return Response(
+        {
+            'error': error
+        },
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+def ok(data, message):
+    """
+        Returns a Response object with data
+        To minimize the effort in views
+        """
+    if message:
+        return Response(
+            {
+                'message': message
+            },
+            status=status.HTTP_200_OK
+        )
+    return Response(
+        {
+            'data': data
+        },
+        status=status.HTTP_200_OK
+    )
