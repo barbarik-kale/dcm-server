@@ -22,7 +22,7 @@ def get_jwt_token(claims):
     """
     claims['iat'] = get_int_from_datetime(datetime.now(timezone.utc))
     claims['exp'] = get_int_from_datetime(
-        datetime.now(timezone.utc) + timedelta(hours=6)
+        datetime.now(timezone.utc) + timedelta(hours=60)
     )
 
     token = jwt_util.encode(claims, JWT_SIGNING_KEY, alg='RS256')
