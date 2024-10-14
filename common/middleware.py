@@ -14,7 +14,7 @@ class JsonBodyMiddleware:
             except json.JSONDecodeError:
                 return HttpResponseBadRequest("Invalid JSON data")
         else:
-            # If it's not JSON, set request.json to None
+            # If it's not JSON, set request.data to None
             request.data = {}
 
         response = self.get_response(request)
