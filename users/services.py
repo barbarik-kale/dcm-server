@@ -50,7 +50,7 @@ class UserService:
                 if user.password == password:
                     return get_jwt_token({
                         'email': email
-                    }), 'login success'
+                    }), None
                 else:
                     return None, 'invalid email or password'
             except User.DoesNotExist:
