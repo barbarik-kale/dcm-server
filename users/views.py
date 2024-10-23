@@ -46,6 +46,10 @@ def user_login(request):
 def user_list(request, **kwargs):
     try:
         users = UserService.get_all_users()
+        users = [
+            user.to_dict()
+            for user in users
+        ]
         return utils.ok(users)
     except Exception:
         return Response({'message': 'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

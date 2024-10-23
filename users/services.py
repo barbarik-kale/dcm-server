@@ -7,7 +7,7 @@ class UserService:
     def get_user(email):
         try:
             user = User.objects.get(email=email)
-            return user.to_dict()
+            return user
         except User.DoesNotExist:
             return None
 
@@ -15,10 +15,6 @@ class UserService:
     def get_all_users():
         try:
             users = User.objects.all()
-            users = [
-                user.to_dict()
-                for user in users
-            ]
             return users
         except Exception as e:
             return []
