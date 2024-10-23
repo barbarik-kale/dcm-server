@@ -33,7 +33,7 @@ class UserService:
             try:
                 user = User(email=email, password=password)
                 user.save()
-                return user, 'email registered'
+                return user, None
             except Exception as e:
                 return None, str(e)
         else:

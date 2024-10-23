@@ -19,7 +19,7 @@ def user_register(request):
         user, error = UserService.register_user(email, password)
         if error:
             return utils.bad(error)
-        return utils.ok(user)
+        return utils.ok(user.to_dict())
     except Exception:
         return Response({'message': 'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
