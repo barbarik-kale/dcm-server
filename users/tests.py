@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+from common.utils import decode_jwt_token
 from users.services import UserService
 
 
@@ -24,3 +25,27 @@ class UserTest(TestCase):
         user, error = UserService.register_user(email, password)
         self.assertIsNone(user)
         self.assertIsNotNone(error)
+
+    def test_user_login(self):
+        email = 'test@mail.com'
+        password = 'test'
+
+        token, error = UserService.login_user(email, None)
+        self.assertIsNotNone(error)
+
+        token, error = UserService.login_user(email, password)
+        self.assertIsNotNone(error)
+
+        user, error = UserService.register_user(email, password)
+        self.assertIsNotNone(user)
+
+        user, error = UserService.login_user(email, password + password)
+        self.assertIsNotNone(error)
+
+        token, error = UserService.login_user(email, password)
+        self.assertIsNone(error)
+        self.assertIsNotNone(token)
+
+        claims = decode_jwt_token(token)
+        self.assertIsNotNone(claims)
+        self.assertEqual(email, claims.get('email', None))

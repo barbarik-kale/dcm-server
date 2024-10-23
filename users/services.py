@@ -44,8 +44,6 @@ class UserService:
         if email and password:
             try:
                 user = User.objects.get(email=email)
-                if not user:
-                    return None, f'account with email {email} does not exist'
 
                 if user.password == password:
                     return get_jwt_token({
