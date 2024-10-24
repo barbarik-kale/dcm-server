@@ -16,35 +16,39 @@ class DroneService:
             return None
 
     @staticmethod
-    def get_drone_list(email):
+    def get_drone_list(email, user=None):
         if not email:
             return None, 'please provide email'
-        drones = Drone.objects.filter(user__email=email)
-        drones = [
-            drone.to_dict()
-            for drone in drones
-        ]
-        return drones, 'drone list'
+        if not user:
+            user = UserService.get_user(email)
+            if not user:
+                return None, f'user with email {email} does not exist!'
+
+        drones = Drone.objects.filter(user=user)
+        return drones, None
 
     @staticmethod
     def create_drone(email, name, avg_speed_ms, flight_time_seconds):
         if not email:
             return None, 'please provide email'
+
         user = UserService.get_user(email)
         if not user:
             return None, f'user with email {email} does not exist'
-        if not flight_time_seconds:
-            return None, 'flight time is required!'
+        if not avg_speed_ms or avg_speed_ms < 0:
+            return None, f'avg_speed_ms is missing or invalid'
+        if not flight_time_seconds or flight_time_seconds < 0:
+            return None, f'flight_time_seconds is missing or invalid'
 
         try:
             drone = Drone(
                 name=name,
                 avg_speed_ms=avg_speed_ms,
                 flight_time_seconds=flight_time_seconds,
-                user__id=user.get('id')
+                user=user
             )
             drone.save()
-            return drone.to_dict(), 'drone created'
+            return drone, None
         except ValidationError:
             return None, 'please check required fields'
 
