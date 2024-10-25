@@ -1,0 +1,54 @@
+from common.utils import get_jwt_token
+from users.models import User
+
+
+class UserService:
+    @staticmethod
+    def get_user(email):
+        try:
+            user = User.objects.get(email=email)
+            return user
+        except User.DoesNotExist:
+            return None
+
+    @staticmethod
+    def get_all_users():
+        try:
+            users = User.objects.all()
+            return users
+        except Exception as e:
+            return []
+
+    @staticmethod
+    def register_user(email, password):
+        if email and password:
+            user = UserService.get_user(email)
+            if user:
+                return None, 'email is already registered!'
+
+            try:
+                user = User(email=email, password=password)
+                user.save()
+                return user, None
+            except Exception as e:
+                return None, str(e)
+        else:
+            return None, 'please provide email and password'
+
+    @staticmethod
+    def login_user(email, password):
+        if email and password:
+            try:
+                user = User.objects.get(email=email)
+
+                if user.password == password:
+                    return get_jwt_token({
+                        'email': email
+                    }), None
+                else:
+                    return None, 'invalid email or password'
+            except User.DoesNotExist:
+                return None, 'invalid email or password'
+        else:
+            return None, 'please provide email and password'
+
