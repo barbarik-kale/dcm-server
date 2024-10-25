@@ -74,3 +74,52 @@ class DroneServiceTest(TestCase):
         self.assertIsNone(error)
         self.assertEqual(drone_id, drone.id)
 
+
+    def test_update_drone(self):
+        original_drone, error = DroneService.create_drone(self.email, 'test1', 5, 100)
+        self.assertIsNotNone(original_drone)
+
+        drone, error = DroneService.update_drone('false@mail.com', '', {})
+        self.assertIsNone(drone)
+        self.assertIsNotNone(error)
+
+        # fix numbers getting saved as name
+        # details = {
+        #     'name': 5
+        # }
+        # drone, error = DroneService.update_drone(self.email, original_drone.id, details)
+        # self.assertIsNone(drone)
+        # self.assertIsNotNone(error)
+
+        details = {
+            'name': 'test',
+            'flight_time_seconds': -4
+        }
+        drone, error = DroneService.update_drone(self.email, original_drone.id, details)
+        self.assertIsNone(drone)
+        self.assertIsNotNone(error)
+
+        details = {
+            'avg_speed_ms': -5
+        }
+        drone, error = DroneService.update_drone(self.email, original_drone.id, details)
+        self.assertIsNone(drone)
+        self.assertIsNotNone(error)
+
+        # check if drone is same
+        drone, error = DroneService.get_drone(self.email, original_drone.id)
+        self.assertEqual(drone.to_dict(), original_drone.to_dict())
+
+
+        details = {
+            'name': 'test',
+            'avg_speed_ms': 10,
+            'flight_time_seconds': 200
+        }
+        drone, error = DroneService.update_drone(self.email, original_drone.id, details)
+        self.assertIsNone(error)
+        self.assertIsNotNone(drone)
+
+        self.assertEqual(details.get('name'), drone.name)
+        self.assertEqual(details.get('avg_speed_ms'), drone.avg_speed_ms)
+        self.assertEqual(details.get('flight_time_seconds'), drone.flight_time_seconds)
