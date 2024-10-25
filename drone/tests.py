@@ -1,5 +1,6 @@
 from django.test import TestCase
 
+from common.constants import DRONE_LIMIT
 from drone.services import DroneService
 from users.services import UserService
 
@@ -22,6 +23,9 @@ class DroneServiceTest(TestCase):
         self.assertEqual(len(drones), 4)
 
     def test_create_drone(self):
+        """
+        please consider DRONE_LIMIT while adding tests here
+        """
         drone, error = DroneService.create_drone(self.email, 'test1', 5, 100)
         self.assertIsNone(error)
         self.assertIsNotNone(drone)
@@ -43,6 +47,17 @@ class DroneServiceTest(TestCase):
         self.assertIsNotNone(error)
 
         drone, error = DroneService.create_drone('test@mail.com', 'test', None, 5)
+        self.assertIsNone(drone)
+        self.assertIsNotNone(error)
+
+    def test_create_drone_limit(self):
+        for i in range(DRONE_LIMIT):
+            drone, error = DroneService.create_drone(self.email, 'test1', 5, 100)
+            self.assertIsNone(error)
+            self.assertIsNotNone(drone)
+
+        # DRONE_LIMIT + 1
+        drone, error = DroneService.create_drone(self.email, 'test1', 5, 100)
         self.assertIsNone(drone)
         self.assertIsNotNone(error)
 

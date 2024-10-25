@@ -2,6 +2,7 @@ from uuid import UUID
 
 from django.core.exceptions import ValidationError
 
+from common.constants import DRONE_LIMIT
 from drone.models import Drone
 from users.models import User
 from users.services import UserService
@@ -47,6 +48,11 @@ class DroneService:
             return None, f'flight_time_seconds is missing or invalid'
 
         try:
+            # check the count of drones
+            drone_count = Drone.objects.filter(user=user).count()
+            if drone_count >= DRONE_LIMIT:
+                return None, f'drone creation limit has reached! drone limit is {DRONE_LIMIT}'
+
             drone = Drone(
                 name=name,
                 avg_speed_ms=avg_speed_ms,
