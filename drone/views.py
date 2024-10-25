@@ -5,7 +5,6 @@ from rest_framework.response import Response
 from common import utils
 from common.decorators import authenticated
 from drone.services import DroneService
-from users.services import UserService
 
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
@@ -22,7 +21,9 @@ def drone_view(request, **kwargs):
 
     elif request.method == 'POST':
         # Create a new drone
-        name = request.data.get('name', 'raju')
+        name = request.data.get('name', 'barbar1k')
+        if name is None:
+            name = 'barbar1k'
         avg_speed_ms = request.data.get('avg_speed_ms')
         flight_time_seconds = request.data.get('flight_time_seconds')
 
@@ -35,32 +36,20 @@ def drone_view(request, **kwargs):
             return Response({'message': 'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     elif request.method == 'PUT':
-        # Update an existing drone
-        drone_id = request.data.get('id')
-        if not drone_id:
-            return utils.bad('please provide drone id')
+        drone_id = request.data.get('drone_id')
 
-        details = {
-            'name': request.data.get('name'),
-            'avg_speed_ms': request.data.get('avg_speed_ms'),
-            'flight_time_seconds': request.data.get('flight_time_seconds')
-        }
-
-        drone, message = DroneService.update_drone(email, drone_id, details)
-        if drone is None:
-            return utils.bad(message)
-        return utils.ok(drone)
+        drone, error = DroneService.update_drone(email, drone_id, request.data)
+        if error is not None:
+            return utils.bad(error)
+        return utils.ok(drone.to_dict())
 
     elif request.method == 'DELETE':
-        # Delete a drone
         drone_id = request.data.get('id')
-        if not drone_id:
-            return utils.bad('please provide drone id')
+        drone_id, error = DroneService.delete_drone(email, drone_id)
 
-        success, message = DroneService.delete_drone(email, drone_id)
-        if not success:
-            return utils.bad(message)
-        return utils.ok(message)
+        if error:
+            return utils.bad(error)
+        return utils.ok({'id': drone_id})
 
 
 @api_view(['GET'])
