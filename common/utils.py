@@ -1,8 +1,7 @@
 import os
 from datetime import datetime, timedelta, timezone
 
-from jwt import JWT, jwk_from_dict
-from jwt.utils import get_int_from_datetime
+import jwt
 from rest_framework import status
 from rest_framework.response import Response
 
@@ -39,40 +38,36 @@ def ok(data=None, message=None):
         status=status.HTTP_200_OK
     )
 
-JWT_SIGNING_KEY = jwk_from_dict(
-    {
-        'kty': 'RSA',
-        'e': 'AQAB',
-        'n': os.getenv('n'),
-        'd': os.getenv('d')
-    }
-)
-jwt_util = JWT()
 
 def get_jwt_token(claims):
     """
+    This method performs an unsafe operation.
+    WARNING: This JWT generate approach is not recommended.
+    Please use appropriate rsa in production
+
     Creates a JWT token
     :param claims: dict of claims like email, role etc.
     :returns token: jwt token
     """
-    claims['iat'] = get_int_from_datetime(datetime.now(timezone.utc))
-    claims['exp'] = get_int_from_datetime(
-        datetime.now(timezone.utc) + timedelta(hours=60)
-    )
+    claims['iat'] = datetime.now(timezone.utc)
+    claims['exp'] = datetime.now(timezone.utc) + timedelta(hours=60)
 
-    token = jwt_util.encode(claims, JWT_SIGNING_KEY, alg='RS256')
+    token = jwt.encode(claims, os.getenv('JWT_SECRET'), algorithm='HS256')
     return token
 
 
 def decode_jwt_token(token):
     """
+    This method performs an unsafe operation.
+    WARNING: This JWT decode approach is not recommended.
+    Please use appropriate rsa in production
+
     Decodes a jwt token
 
     :param token: jwt token in str
     :returns claims: dict of claims email, role etc
     """
     try:
-        claims = jwt_util.decode(token, JWT_SIGNING_KEY, do_time_check=True)
-        return claims
+        return jwt.decode(token, os.getenv('JWT_SECRET'), algorithms='HS256')
     except Exception:
         return None
