@@ -39,14 +39,7 @@ def ok(data=None, message=None):
         status=status.HTTP_200_OK
     )
 
-JWT_SIGNING_KEY = jwk_from_dict(
-    {
-        'kty': 'RSA',
-        'e': 'AQAB',
-        'n': os.getenv('n'),
-        'd': os.getenv('d')
-    }
-)
+
 jwt_util = JWT()
 
 def get_jwt_token(claims):
@@ -60,7 +53,7 @@ def get_jwt_token(claims):
         datetime.now(timezone.utc) + timedelta(hours=60)
     )
 
-    token = jwt_util.encode(claims, JWT_SIGNING_KEY, alg='RS256')
+    token = jwt_util.encode(claims, os.getenv('JWT_KEY'))
     return token
 
 
