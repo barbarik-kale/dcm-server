@@ -1,0 +1,165 @@
+import json
+
+from common.utils import decode_jwt_token
+from drone.services import DroneService
+from users.services import UserService
+
+DRONE = 'drone'
+CONTROLLER = 'controller'
+
+connection_map = dict()
+connection_types = ['drone', 'controller']
+
+class DCService:
+    """
+    DroneControllerService is responsible for validating websocket connection requests, sending messages
+    to drones and controllers.
+    """
+    @staticmethod
+    def validate_connection_request(token, drone_id, connection_type):
+        if not token or not drone_id:
+            return None, 'token, drone_id are required'
+        if not connection_type in connection_types:
+            return None, f'connection type must be present in {connection_types}'
+
+        claims = decode_jwt_token(token)
+        if not claims:
+            return None, 'please provide valid token'
+
+        email = claims.get('email', None)
+        if not email:
+            return None, 'invalid jwt token'
+
+        user = UserService.get_user(email)
+        if not user:
+            return None, f'user with email {email} does not exist'
+
+        drone, error = DroneService.get_drone(email, drone_id)
+        if error:
+            return None, error
+
+        # check for duplicate connection requests
+        global connection_map
+        details = connection_map.get(drone_id, {
+            'drone': None,
+            'controller': None
+        })
+        if details.get(connection_type) is None:
+            return email, None
+        return None, f'{connection_type} connection already exists'
+
+    @staticmethod
+    def add_drone(drone_id, connection):
+        if not drone_id or not connection:
+            return 'drone_id and connection is required'
+        global connection_map
+        details = connection_map.get(drone_id, None)
+
+        if details and details.get('drone'):
+            return 'a drone is already connected'
+        if details:
+            details['drone'] = connection
+        else:
+            details = {
+                'drone': connection,
+                'controller': None
+            }
+            connection_map[drone_id] = details
+
+        data = {
+            'drone_id': drone_id,
+            'status': 'online'
+        }
+        DCService.send_to_controller(drone_id, data)
+        return None
+
+    @staticmethod
+    def add_controller(drone_id, connection):
+        if not drone_id or not connection:
+            return 'drone_id and connection is required'
+        global connection_map
+        details = connection_map.get(drone_id, None)
+
+        if details and details.get(CONTROLLER):
+            return 'a drone is already connected'
+        if details:
+            details[CONTROLLER] = connection
+        else:
+            details = {
+                'drone': None,
+                'controller': connection
+            }
+            connection_map[drone_id] = details
+
+        return None
+
+    @staticmethod
+    def send_to_drone(drone_id, data):
+        global connection_map
+        details = connection_map.get(drone_id, None)
+        if details and details.get(DRONE):
+            drone_connection = details.get(DRONE)
+            try:
+                drone_connection.send(text_data=json.dumps(data))
+            except:
+                pass
+        return None
+
+    @staticmethod
+    def send_to_controller(drone_id, data):
+        global connection_map
+        details = connection_map.get(drone_id, None)
+        if details and details.get(CONTROLLER):
+            try:
+                controller_connection = details.get(CONTROLLER)
+                controller_connection.send(text_data=json.dumps(data))
+            except:
+                pass
+        return None
+
+    @staticmethod
+    def disconnect_drone(drone_id):
+        global connection_map
+        details = connection_map.get(drone_id, None)
+        if details and details.get(DRONE):
+            details[DRONE] = None
+            data = {
+                'drone_id': drone_id,
+                'status': 'offline'
+            }
+            DCService.send_to_controller(drone_id, data)
+        return None
+
+    @staticmethod
+    def disconnect_controller(drone_id):
+        global connection_map
+        details = connection_map.get(drone_id, None)
+        if details and details.get(CONTROLLER):
+            details[CONTROLLER] = None
+        return None
+
+    @staticmethod
+    def process_message_by_drone(drone_id, text_data):
+        global connection_map
+        details = connection_map.get(drone_id)
+        if details and details.get(CONTROLLER):
+            controller_connection = details.get(CONTROLLER)
+            try:
+                controller_connection.send(text_data=text_data)
+            except:
+                pass
+
+        return None
+
+    @staticmethod
+    def process_message_by_controller(drone_id, text_data):
+        global connection_map
+        details = connection_map.get(drone_id)
+        if details and details.get(DRONE):
+            controller_connection = details.get(DRONE)
+            try:
+                controller_connection.send(text_data=text_data)
+            except:
+                pass
+
+        return None
