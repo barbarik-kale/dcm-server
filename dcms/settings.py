@@ -32,10 +32,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
+# daphne takes control of the server.
+# to enable ws protocol
+ASGI_APPLICATION = 'dcms.asgi.application'
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,7 +49,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'common',
     'drone',
-    'users'
+    'users',
+    'ws'
 ]
 
 MIDDLEWARE = [
