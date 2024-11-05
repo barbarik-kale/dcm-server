@@ -4,7 +4,7 @@ from django.test import TestCase
 
 from drone.services import DroneService
 from users.services import UserService
-from ws.services import DCService
+from ws.services import DCService, connection_map
 
 
 class MockConsumer:
@@ -114,3 +114,33 @@ class TestSendData(TestCase):
         text_data = 'message'
         DCService.process_message_by_drone(self.drone_id, text_data)
         self.assertEqual(text_data, self.mock_consumer.text_data)
+
+class TestDisconnect(TestCase):
+    def setUp(self):
+        self.mock_consumer = MockConsumer()
+
+        self.email = 'test@mail.com'
+        self.password = 'test'
+        user, error = UserService.register_user(self.email, self.password)
+
+        # create a drone
+        drone, error = DroneService.create_drone(self.email, 'test', 10, 1000)
+        self.drone_id = drone.id
+        self.assertIsNotNone(drone)
+
+        error = DCService.add_drone(self.drone_id, self.mock_consumer)
+        self.assertIsNone(error)
+        error = DCService.add_controller(self.drone_id, self.mock_consumer)
+        self.assertIsNone(error)
+
+    def test_drone_disconnect(self):
+        data = {
+            'drone_id': str(self.drone_id),
+            'status': 'online'
+        }
+        self.assertEqual(data.get('status'), DCService.get_drone_status(self.drone_id).get('status'))
+
+        data['status'] = 'offline'
+        DCService.disconnect_drone(self.drone_id)
+        self.assertEqual(data.get('status'), DCService.get_drone_status(self.drone_id).get('status'))
+        self.assertEqual(json.dumps(data), self.mock_consumer.text_data)

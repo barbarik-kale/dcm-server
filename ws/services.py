@@ -1,4 +1,5 @@
 import json
+import logging
 
 from common.utils import decode_jwt_token
 from drone.services import DroneService
@@ -9,6 +10,8 @@ CONTROLLER = 'controller'
 
 connection_map = dict()
 connection_types = ['drone', 'controller']
+
+logger = logging.getLogger('ws')
 
 class DCService:
     """
@@ -67,7 +70,7 @@ class DCService:
             connection_map[drone_id] = details
 
         data = {
-            'drone_id': drone_id,
+            'drone_id': str(drone_id),
             'status': 'online'
         }
         DCService.send_to_controller(drone_id, data)
@@ -101,8 +104,8 @@ class DCService:
             drone_connection = details.get(DRONE)
             try:
                 drone_connection.send(text_data=json.dumps(data))
-            except:
-                pass
+            except Exception as e:
+                logger.error(msg=f'Exception in send to drone - {e}')
         return None
 
     @staticmethod
@@ -113,8 +116,8 @@ class DCService:
             try:
                 controller_connection = details.get(CONTROLLER)
                 controller_connection.send(text_data=json.dumps(data))
-            except:
-                pass
+            except Exception as e:
+                logger.error(msg=f'Exception in send to drone - {e}')
         return None
 
     @staticmethod
@@ -124,7 +127,7 @@ class DCService:
         if details and details.get(DRONE):
             details[DRONE] = None
             data = {
-                'drone_id': drone_id,
+                'drone_id': str(drone_id),
                 'status': 'offline'
             }
             DCService.send_to_controller(drone_id, data)
@@ -163,3 +166,15 @@ class DCService:
                 pass
 
         return None
+
+    @staticmethod
+    def get_drone_status(drone_id):
+        global connection_map
+        details = connection_map.get(drone_id)
+        if details and details.get(DRONE):
+            return {
+                'status': 'online'
+            }
+        return {
+            'status': 'offline'
+        }
