@@ -4,7 +4,7 @@ from rest_framework.response import Response
 
 from common import utils
 from common.decorators import authenticated
-from drone.services import DroneService
+from drone.services import DroneService, LiveDataService
 
 
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
@@ -67,3 +67,16 @@ def get_drone_list(request, **kwargs):
         return utils.ok(drones)
     except Exception as e:
         return Response({'message': 'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@authenticated()
+def get_drone_live_data(request, **kwargs):
+    try:
+        email = kwargs['email']
+        drone_ids = request.data.get('drone_ids')
+        drone_live_data = LiveDataService.get_drone_data_by_ids(email, drone_ids)
+        return utils.ok(drone_live_data)
+    except Exception as e:
+        return Response({'message': 'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+

@@ -36,7 +36,7 @@ class DroneConsumer(WebsocketConsumer):
             self.close(code=404, reason=error)
             return
 
-        error = DCService.add_drone(drone_id, self)
+        error = DCService.add_drone(drone_id, self, email)
         if error:
             self.close(code=404, reason=error)
             return
@@ -46,10 +46,10 @@ class DroneConsumer(WebsocketConsumer):
         self.accept()
 
     def disconnect(self, code):
-        DCService.disconnect_drone(self.drone_id)
+        DCService.disconnect_drone(self.drone_id, self.email)
 
     def receive(self, text_data=None, bytes_data=None):
-        DCService.process_message_by_drone(self.drone_id, text_data)
+        DCService.process_message_by_drone(self.drone_id, text_data, self.email)
 
 
 class ControllerConsumer(WebsocketConsumer):

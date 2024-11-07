@@ -2,7 +2,7 @@ import json
 import logging
 
 from common.utils import decode_jwt_token
-from drone.services import DroneService
+from drone.services import DroneService, LiveDataService
 from users.services import UserService
 
 DRONE = 'drone'
@@ -52,7 +52,7 @@ class DCService:
         return None, f'{connection_type} connection already exists'
 
     @staticmethod
-    def add_drone(drone_id, connection):
+    def add_drone(drone_id, connection, email=None):
         if not drone_id or not connection:
             return 'drone_id and connection is required'
         global connection_map
@@ -74,6 +74,9 @@ class DCService:
             'status': 'online'
         }
         DCService.send_to_controller(drone_id, data)
+
+        # set drone online
+        LiveDataService.set_online(email, drone_id)
         return None
 
     @staticmethod
@@ -121,7 +124,7 @@ class DCService:
         return None
 
     @staticmethod
-    def disconnect_drone(drone_id):
+    def disconnect_drone(drone_id, email=None):
         global connection_map
         details = connection_map.get(drone_id, None)
         if details and details.get(DRONE):
@@ -131,6 +134,7 @@ class DCService:
                 'status': 'offline'
             }
             DCService.send_to_controller(drone_id, data)
+        LiveDataService.set_offline(email, drone_id)
         return None
 
     @staticmethod
@@ -142,7 +146,13 @@ class DCService:
         return None
 
     @staticmethod
-    def process_message_by_drone(drone_id, text_data):
+    def process_message_by_drone(drone_id, text_data, email=None):
+        # update live drone data
+        try:
+            LiveDataService.set_drone_data(email, drone_id, json.loads(text_data))
+        except Exception as e:
+            logger.error(msg=f'text_data - {text_data}, Exception - {str(e)}')
+
         global connection_map
         details = connection_map.get(drone_id)
         if details and details.get(CONTROLLER):
