@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from django.core.exceptions import ValidationError
@@ -143,6 +144,13 @@ class LiveDataService:
     def get_drone_data(email, drone_id):
         global drone_data
         data = drone_data.get(drone_id, {})
+
+        # if data is stale mark drone as offline
+        if data:
+            last_updated = data.get('last_update')
+            diff = datetime.now() - last_updated
+            if diff.seconds > 10:
+                data = {}
         if email != data.get('email'):
             data = {}
         return {
@@ -164,7 +172,8 @@ class LiveDataService:
             'email': email,
             'latitude': data.get('latitude', prev_data.get('latitude')),
             'longitude': data.get('longitude', prev_data.get('longitude')),
-            'status': data.get('status', prev_data.get('status', 'offline'))
+            'status': data.get('status', prev_data.get('status', 'offline')),
+            'last_update': datetime.now()
         }
         return True
 
