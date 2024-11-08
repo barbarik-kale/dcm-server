@@ -1,7 +1,9 @@
+import time
+
 from django.test import TestCase
 
 from common.constants import DRONE_LIMIT
-from drone.services import DroneService
+from drone.services import DroneService, LiveDataService
 from users.services import UserService
 
 
@@ -138,3 +140,85 @@ class DroneServiceTest(TestCase):
         self.assertEqual(details.get('name'), drone.name)
         self.assertEqual(details.get('avg_speed_ms'), drone.avg_speed_ms)
         self.assertEqual(details.get('flight_time_seconds'), drone.flight_time_seconds)
+
+
+class TestLiveDataService(TestCase):
+    def setUp(self):
+        self.email = 'test@mail.com'
+        self.password = 'test'
+
+        user, error = UserService.register_user(self.email, self.password)
+        self.assertIsNotNone(user)
+
+        drone, error = DroneService.create_drone(
+            self.email,
+            'test',
+            10,
+            100
+        )
+        self.assertIsNotNone(drone)
+        self.drone_id = drone.id
+
+    def test_drone_status(self):
+        test_data = {
+            'drone_id': self.drone_id,
+            'latitude': None,
+            'longitude': None,
+            'status': 'offline'
+        }
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        self.assertEqual(test_data, live_data)
+
+        LiveDataService.set_online(self.email, self.drone_id)
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        self.assertEqual(live_data.get('status'), 'online')
+
+        LiveDataService.set_offline(self.email, self.drone_id)
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        self.assertEqual(test_data, live_data)
+
+        LiveDataService.set_online(self.email, self.drone_id)
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        self.assertEqual(live_data.get('status'), 'online')
+
+        time.sleep(11)
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        self.assertEqual(test_data, live_data)
+
+    def test_location(self):
+        test_data = {
+            'drone_id': self.drone_id,
+            'latitude': 10.10,
+            'longitude': 20.20,
+            'status': 'online'
+        }
+
+        is_updated = LiveDataService.set_drone_data(self.email, self.drone_id, test_data)
+        self.assertTrue(is_updated)
+
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        self.assertEqual(test_data, live_data)
+
+        LiveDataService.set_offline(self.email, self.drone_id)
+
+        drone, error = DroneService.get_drone(self.email, self.drone_id)
+        self.assertIsNotNone(drone)
+
+        self.assertAlmostEquals(test_data.get('latitude'), float(drone.last_latitude))
+        self.assertEqual(test_data.get('longitude'), float(drone.last_longitude))
+
+    def test_multiple_drone_data(self):
+        test_data = {
+            'drone_id': self.drone_id,
+            'latitude': None,
+            'longitude': None,
+            'status': 'offline'
+        }
+        data_list = [test_data, test_data, test_data]
+
+        live_data_list = LiveDataService.get_drone_data_by_ids(
+            self.email,
+            [self.drone_id, self.drone_id, self.drone_id]
+        )
+        self.assertEqual(data_list, live_data_list)
+

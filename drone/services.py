@@ -143,8 +143,7 @@ class LiveDataService:
     @staticmethod
     def get_drone_data(email, drone_id):
         global drone_data
-        data = drone_data.get(drone_id, {})
-
+        data = drone_data.get(str(drone_id), {})
         # if data is stale mark drone as offline
         if data:
             last_updated = data.get('last_update')
@@ -167,7 +166,7 @@ class LiveDataService:
             data = {}
         if not email or not drone_id:
             return False
-        prev_data = drone_data.get(drone_id, {})
+        prev_data = drone_data.get(str(drone_id), {})
         drone_data[str(drone_id)] = {
             'email': email,
             'latitude': data.get('latitude', prev_data.get('latitude')),
@@ -193,7 +192,7 @@ class LiveDataService:
         LiveDataService.set_drone_data(email, drone_id, live_data)
 
         # update last_latitude and last_longitude
-        details = drone_data.get(drone_id)
+        details = drone_data.get(str(drone_id))
         if details:
             DroneService.update_location_details(
                 email,
