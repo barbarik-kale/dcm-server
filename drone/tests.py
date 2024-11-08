@@ -1,3 +1,4 @@
+import json
 import time
 
 from django.test import TestCase
@@ -5,6 +6,7 @@ from django.test import TestCase
 from common.constants import DRONE_LIMIT
 from drone.services import DroneService, LiveDataService
 from users.services import UserService
+from ws.services import DCService
 
 
 class DroneServiceTest(TestCase):
@@ -221,4 +223,17 @@ class TestLiveDataService(TestCase):
             [self.drone_id, self.drone_id, self.drone_id]
         )
         self.assertEqual(data_list, live_data_list)
+
+
+    def test_process_message_by_drone(self):
+        test_data = {
+            'drone_id': str(self.drone_id),
+            'latitude': 5,
+            'longitude': 5,
+            'status': 'online'
+        }
+        DCService.process_message_by_drone(self.drone_id, json.dumps(test_data), self.email)
+        live_data = LiveDataService.get_drone_data(self.email, self.drone_id)
+        live_data['drone_id'] = str(live_data.get('drone_id'))
+        self.assertEqual(test_data, live_data)
 
