@@ -39,7 +39,7 @@ def ok(data=None, message=None):
     )
 
 
-def get_jwt_token(claims):
+def get_jwt_token(claims, ws_token=False):
     """
     This method performs an unsafe operation.
     WARNING: This JWT generate approach is not recommended.
@@ -50,7 +50,10 @@ def get_jwt_token(claims):
     :returns token: jwt token
     """
     claims['iat'] = datetime.now(timezone.utc)
-    claims['exp'] = datetime.now(timezone.utc) + timedelta(hours=60)
+    if ws_token:
+        claims['exp'] = datetime.now(timezone.utc) + timedelta(seconds=10)
+    else:
+        claims['exp'] = datetime.now(timezone.utc) + timedelta(hours=60)
 
     token = jwt.encode(claims, os.getenv('JWT_SECRET'), algorithm='HS256')
     return token
