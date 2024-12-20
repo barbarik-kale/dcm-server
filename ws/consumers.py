@@ -24,14 +24,11 @@ class DroneConsumer(WebsocketConsumer):
         self.drone_id = None
 
     def connect(self):
-        headers = dict(self.scope['headers'])
-        auth_header = headers.get(b'authorization', None)
-
         query_string = self.scope['query_string'].decode()
         query_params = parse_qs(query_string)
-        drone_id = query_params.get('drone_id', [None])[0]
+        token = query_params.get('token', [None])[0]
 
-        email, error = DCService.validate_connection_request(auth_header, drone_id, 'drone')
+        email, drone_id, error = DCService.validate_connection_request(token, 'drone')
         if error:
             self.close(code=404, reason=error)
             return
@@ -70,14 +67,11 @@ class ControllerConsumer(WebsocketConsumer):
         self.drone_id = None
 
     def connect(self):
-        headers = dict(self.scope['headers'])
-        auth_header = headers.get(b'authorization', None)
-
         query_string = self.scope['query_string'].decode()
         query_params = parse_qs(query_string)
-        drone_id = query_params.get('drone_id', [None])[0]
+        token = query_params.get('token', [None])[0]
 
-        email, error = DCService.validate_connection_request(auth_header, drone_id, 'controller')
+        email, drone_id, error = DCService.validate_connection_request(token, 'controller')
         if error:
             self.close(code=404, reason=error)
             return

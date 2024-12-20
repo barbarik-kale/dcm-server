@@ -19,27 +19,28 @@ class DCService:
     to drones and controllers.
     """
     @staticmethod
-    def validate_connection_request(token, drone_id, connection_type):
-        if not token or not drone_id:
-            return None, 'token, drone_id are required'
+    def validate_connection_request(token, connection_type):
+        if not token:
+            return None, None, 'token, drone_id are required'
         if not connection_type in connection_types:
-            return None, f'connection type must be present in {connection_types}'
+            return None, None, f'connection type must be present in {connection_types}'
 
         claims = decode_jwt_token(token)
         if not claims:
-            return None, 'please provide valid token'
+            return None, None, 'please provide valid token'
 
         email = claims.get('email', None)
-        if not email:
-            return None, 'invalid jwt token'
+        drone_id = claims.get('drone_id', None)
+        if not email or not drone_id:
+            return None, None, 'invalid jwt token'
 
         user = UserService.get_user(email)
         if not user:
-            return None, f'user with email {email} does not exist'
+            return None, None, f'user with email {email} does not exist'
 
         drone, error = DroneService.get_drone(email, drone_id)
         if error:
-            return None, error
+            return None, None, error
 
         # check for duplicate connection requests
         global connection_map
@@ -48,8 +49,8 @@ class DCService:
             'controller': None
         })
         if details.get(connection_type) is None:
-            return email, None
-        return None, f'{connection_type} connection already exists'
+            return email, drone_id, None
+        return None, None, f'{connection_type} connection already exists'
 
     @staticmethod
     def add_drone(drone_id, connection, email=None):
@@ -188,3 +189,14 @@ class DCService:
         return {
             'status': 'offline'
         }
+
+    @staticmethod
+    def handle_media(drone_id, bytes_data):
+        global connection_map
+        details = connection_map.get(drone_id)
+        if details and details.get(CONTROLLER):
+            controller_connection = details.get(CONTROLLER)
+            try:
+                controller_connection.send(bytes_data=bytes_data)
+            except:
+                pass

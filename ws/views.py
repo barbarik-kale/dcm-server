@@ -7,7 +7,7 @@ from common.decorators import authenticated
 from drone.services import DroneService
 
 
-@api_view(['GET'])
+@api_view(['POST'])
 @authenticated()
 def get_ws_token(request, **kwargs):
     try:
