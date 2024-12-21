@@ -1,6 +1,7 @@
 import json
 import logging
 
+from common import utils
 from common.utils import decode_jwt_token
 from drone.services import DroneService, LiveDataService
 from users.services import UserService
@@ -20,6 +21,17 @@ class DCService:
     """
     @staticmethod
     def validate_connection_request(token, connection_type):
+        """
+
+        Args:
+            token (str) : websocket connection token
+            connection_type (str) : type of connection drone or controller
+
+        Returns:
+            email (str) : email extracted from token
+            drone_id (str) : drone_id extracted from token
+            error (str) : error message if any
+        """
         if not token:
             return None, None, 'token, drone_id are required'
         if not connection_type in connection_types:
@@ -200,3 +212,21 @@ class DCService:
                 controller_connection.send(bytes_data=bytes_data)
             except:
                 pass
+
+
+class TokenService:
+    @staticmethod
+    def get_ws_token(drone_id, email):
+        if not email or not drone_id:
+            return None, 'drone_id and email are required!'
+
+        drone, error = DroneService.get_drone(email, drone_id)
+        if error:
+            return None, error
+
+        claims = {
+            'email': email,
+            'drone_id': str(drone_id)
+        }
+        token = utils.get_jwt_token(claims, True)
+        return token, None

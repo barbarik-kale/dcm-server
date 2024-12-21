@@ -1,10 +1,11 @@
 import json
+import time
 
 from django.test import TestCase
 
 from drone.services import DroneService
 from users.services import UserService
-from ws.services import DCService, connection_map
+from ws.services import DCService, TokenService
 
 
 class MockConsumer:
@@ -30,29 +31,38 @@ class DCServiceTest(TestCase):
         self.drone_id = drone.id
 
         # get jwt token
-        token, error = UserService.login_user(self.email, self.password)
+        token, error = TokenService.get_ws_token(self.drone_id, self.email)
+        self.assertIsNone(error)
+        self.assertIsNotNone(token)
         self.token = token
 
     def test_connection_validations(self):
-        email, error = DCService.validate_connection_request(self.token, self.drone_id, '')
+        email, drone_id, error = DCService.validate_connection_request(self.token, '')
         self.assertIsNone(email)
+        self.assertIsNone(drone_id)
         self.assertIsNotNone(error)
 
-        email, error = DCService.validate_connection_request(self.token, self.drone_id, 'invalid')
+        email, drone_id, error = DCService.validate_connection_request(self.token, 'invalid')
         self.assertIsNone(email)
+        self.assertIsNone(drone_id)
         self.assertIsNotNone(error)
 
-        email, error = DCService.validate_connection_request(self.drone_id, self.token, '')
-        self.assertIsNone(email)
-        self.assertIsNotNone(error)
-
-        email, error = DCService.validate_connection_request(self.token, self.drone_id, 'drone')
+        email, drone_id, error = DCService.validate_connection_request(self.token, 'drone')
         self.assertIsNone(error)
         self.assertIsNotNone(email)
+        self.assertIsNotNone(drone_id)
 
-        email, error = DCService.validate_connection_request(self.token, self.drone_id, 'controller')
+        email, drone_id, error = DCService.validate_connection_request(self.token, 'controller')
         self.assertIsNone(error)
         self.assertIsNotNone(email)
+        self.assertIsNotNone(drone_id)
+
+        # token should expire after 10 seconds
+        time.sleep(10)
+        email, drone_id, error = DCService.validate_connection_request(self.token, 'drone')
+        self.assertIsNone(email)
+        self.assertIsNone(drone_id)
+        self.assertIsNotNone(error)
 
     def test_add_drone(self):
         error = DCService.add_drone(self.drone_id, None)
@@ -144,3 +154,34 @@ class TestDisconnect(TestCase):
         DCService.disconnect_drone(self.drone_id)
         self.assertEqual(data.get('status'), DCService.get_drone_status(self.drone_id).get('status'))
         self.assertEqual(json.dumps(data), self.mock_consumer.text_data)
+
+
+class TestTokenService(TestCase):
+    def setUp(self):
+        self.email = 'test_token_service@mail.com'
+        self.password = 'test_token_service'
+        user, error = UserService.register_user(self.email, self.password)
+        self.assertIsNotNone(user)
+
+        # create a drone
+        drone, error = DroneService.create_drone(self.email, 'test', 10, 1000)
+        self.drone_id = drone.id
+        self.assertIsNotNone(drone)
+        self.assertIsNotNone(drone)
+
+    def test_get_ws_token(self):
+        token, error = TokenService.get_ws_token(None, None)
+        self.assertIsNone(token)
+        self.assertIsNotNone(error)
+
+        token, error = TokenService.get_ws_token(self.drone_id, None)
+        self.assertIsNone(token)
+        self.assertIsNotNone(error)
+
+        token, error = TokenService.get_ws_token(None, self.email)
+        self.assertIsNone(token)
+        self.assertIsNotNone(error)
+
+        token, error = TokenService.get_ws_token(self.drone_id, self.email)
+        self.assertIsNone(error)
+        self.assertIsNotNone(token)
