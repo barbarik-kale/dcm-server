@@ -4,7 +4,6 @@ from rest_framework.response import Response
 
 from common import utils
 from common.decorators import authenticated
-from drone.services import DroneService
 from ws.services import TokenService
 
 

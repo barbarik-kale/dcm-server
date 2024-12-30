@@ -1,3 +1,4 @@
+from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -54,3 +55,6 @@ def user_list(request, **kwargs):
     except Exception:
         return Response({'message': 'something went wrong'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+
+def live_video_stream(request):
+    return render(request, 'index.html')
