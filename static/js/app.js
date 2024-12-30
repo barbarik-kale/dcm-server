@@ -1,20 +1,23 @@
 async function loginAndGetTokens() {
     try {
+        const email = localStorage.getItem('email');
+        const password = localStorage.getItem('password');
+        const drone_id = localStorage.getItem('drone_id');
         // Login Request
-        const loginResponse = await fetch('http://localhost:8000/user/login/', {
+        const loginResponse = await fetch('/user/login/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: 'hrushi@mail.com', password: 'hrushi' })
+            body: JSON.stringify({ email: email, password: password })
         });
 
         const loginData = await loginResponse.json();
         const loginToken = loginData.data.token;
 
         // Fetch Media Token
-        const tokenResponse = await fetch('http://localhost:8000/ws/token/', {
+        const tokenResponse = await fetch('/ws/token/', {
             method: 'POST',
             headers: { Authorization: `${loginToken}` , 'Content-Type': 'application/json'},
-            body: JSON.stringify({drone_id: "1ce9ecb9-65b1-4e29-ae00-f48f4255bed4"})
+            body: JSON.stringify({drone_id: drone_id})
         });
 
         const tokenData = await tokenResponse.json();
@@ -26,7 +29,7 @@ async function loginAndGetTokens() {
 
 function startWebSocketStream(mediaToken) {
     const videoElement = document.getElementById('videoStream');
-    const webSocket = new WebSocket(`ws://localhost:8000/ws/media/consumer/?token=${mediaToken}`);
+    const webSocket = new WebSocket(`/ws/media/consumer/?token=${mediaToken}`);
 
     webSocket.binaryType = 'arraybuffer'; // Ensure binary data is handled correctly
 
