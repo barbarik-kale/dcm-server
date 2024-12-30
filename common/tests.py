@@ -1,3 +1,5 @@
+import time
+
 from django.test import TestCase
 from rest_framework import status
 
@@ -44,3 +46,30 @@ class JWTTest(TestCase):
 
         self.assertEqual(claims['email'], claims_2.get('email', None))
         self.assertEqual(claims['role'], claims_2.get('role', None))
+
+    def test_ws_token(self):
+        claims = {
+            'email': 'test@mail.com',
+            'drone_id': 'test'
+        }
+        token = get_jwt_token(claims, True)
+        self.assertIsNotNone(token)
+
+
+        claims_2 = decode_jwt_token(token)
+
+        self.assertEqual(claims['email'], claims_2.get('email', None))
+        self.assertEqual(claims['drone_id'], claims_2.get('drone_id', None))
+
+    def test_ws_token_expiry(self):
+        claims = {
+            'email': 'test@mail.com',
+            'drone_id': 'test'
+        }
+        token = get_jwt_token(claims, True)
+        self.assertIsNotNone(token)
+
+        # after 10 seconds the token should expire
+        time.sleep(10)
+        claims_2 = decode_jwt_token(token)
+        self.assertIsNone(claims_2)
